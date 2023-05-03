@@ -1,7 +1,8 @@
-from typing import Tuple
+from time import sleep
 import requests
 from database import MangaDatabase
 MANGA_LIST_API = "https://api.mangadex.org/manga"
+CHAPTER_LIST_API = "https://api.mangadex.org/chapter"
 
 
 class MangaDexAPI():
@@ -15,6 +16,8 @@ class MangaDexAPI():
                 res += key
                 for k, v in value.items():
                     res += f"[{k}]={v}"
+                    res += "&"
+                res = res[:-1]
             else:
                 res += f"{key}={value}"
             res += "&"
@@ -35,18 +38,48 @@ class MangaDexAPI():
 
     def get_anime(self):
         headers = {}
-        max_count = 30
+        max_count = 5000
         next_offset = 0
         data = []
         while next_offset < max_count:
+            if next_offset % 500 == 0:
+                sleep(1)
             param, next_offset = self._create_param(
-                limit=10, offset=next_offset)
+                limit=100, offset=next_offset)
             resp = requests.get(MANGA_LIST_API + param, headers=headers)
             if resp.status_code == 200:
                 data.extend(resp.json()["data"])
             else:
-                raise Exception(
-                    f"EXEPTION:[API] stopped at {next_offset} with\n {resp.json()}, ")
+                print(
+                    f"EXCEPTION:[API] stopped at {next_offset} with\n {resp}, ")
+                break
+        return data
+
+    def _get_chapter_query(self, manga_id):
+        return {
+            "manga": manga_id,
+            "translatedLanguage": ["en"],
+            "contentRating": ["safe", "suggestive", "erotica"],
+            "includeFutureUpdates": 1,
+            "order": {
+                "createdAt": "asc",
+                "updatedAt": "asc",
+                "publishAt": "asc",
+                "readableAt": "asc",
+                "volume": "asc",
+                "chapter": "asc"
+            },
+            "limit": 100
+        }
+
+    def get_chapter_name(self, manga):
+        param = self._get_chapter_query(manga["_id"])
+        resp = requests.get(CHAPTER_LIST_API + param)
+
+        if resp.status_code == 200:
+            data.extend(resp.json()["data"])
+        else:
+            print(f"EXCEPTION:[API] stopped at {manga['attributes']['title']} with\n {resp}, ")
         return data
 
 

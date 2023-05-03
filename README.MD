@@ -2,6 +2,8 @@ manga recommendation system
 
 <h1>mangadex.org</h1>
 
+*API credit belong to MangaDex* 
+
 get all the manga
 
 - description
